@@ -1,0 +1,30 @@
+# ============================================
+# OpenSeismoPi — Python Dependencies
+# FOSSEE Open Hardware Make-A-Thon 2026
+# ============================================
+
+# --- Raspberry Pi: I2C Sensor Stack ---
+smbus2>=0.4.3
+adafruit-blinka>=8.20.0
+adafruit-circuitpython-adxl34x>=1.12.0
+adafruit-circuitpython-ahtx0>=1.0.0
+adafruit-circuitpython-bmp280>=3.2.0
+
+# --- Raspberry Pi: SPI LoRa Radio ---
+spidev>=3.6
+adafruit-circuitpython-rfm9x>=2.1.0
+
+# --- Raspberry Pi: GPIO Buzzer ---
+gpiozero>=2.0.1
+
+# --- Raspberry Pi: Quectel EC200U Modem (UART) ---
+pyserial>=3.5
+
+# --- Windows Server: Database Ingestion ---
+pymysql>=1.1.0
+
+# --- Windows Server: Flask Web Dashboard ---
+flask>=3.0.0
+
+# --- Report Generation (PDF) ---
+reportlab>=4.1.0
