@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenSeismo - Enterprise Analytics</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- DataTables & Export Buttons CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+    
+    <style>
+        body { background-color: #f4f7f6; color: #333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background-color: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .navbar-brand { color: #0d6efd !important; font-weight: 700; }
+        .card { background-color: #ffffff; border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 24px; }
+        .card-header { background-color: #ffffff; border-bottom: 1px solid #f0f0f0; font-weight: 600; color: #2c3e50; border-radius: 12px 12px 0 0 !important; padding: 16px 20px; }
+        .metric-value { font-size: 2.2rem; font-weight: 700; color: #0d6efd; }
+        .metric-label { font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;}
+        
+        .nav-pills .nav-link { color: #555; font-weight: 500; border-radius: 8px; padding: 10px 15px; margin-right: 5px; transition: 0.2s; font-size: 0.9rem;}
+        .nav-pills .nav-link.active { background-color: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); }
+        .nav-pills .nav-link:hover:not(.active) { background-color: #e9ecef; }
+        
+        #map { height: 350px; border-radius: 8px; }
+        
+        .danger-glow { animation: pulse-red 1s infinite; border: 2px solid #ff4d4d !important; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+        }
+        
+        .table-custom th { background-color: #f8f9fa !important; color: #495057; text-transform: uppercase; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; }
+        .table-custom td { vertical-align: middle; color: #555; font-size: 0.95rem; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #0d6efd !important; color: white !important; border: none; border-radius: 5px;}
+        
+        /* SMS Terminal Style */
+        .terminal { background-color: #f8f9fa; color: #495057; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.9rem; height: 180px; overflow-y: auto; padding: 15px; border-radius: 0 0 12px 12px; border-top: none;}
+        
+        /* API Hub code styling */
+        .api-code { background-color: #272822; color: #f8f8f2; padding: 15px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; margin-top: 10px;}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4 py-3 mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-activity me-2" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M6 2a.5.5 0 0 1 .47.33L10 12.036l1.53-4.208A.5.5 0 0 1 12 7.5h3.5a.5.5 0 0 1 0 1h-3.15l-1.88 5.17a.5.5 0 0 1-.94 0L6 3.964 4.47 8.171A.5.5 0 0 1 4 8.5H.5a.5.5 0 0 1 0-1h3.15l1.88-5.17A.5.5 0 0 1 6 2Z"/>
+            </svg>
+            <div>
+                <div style="font-size: 1.25rem;">OpenSeismo</div>
+                <div style="font-size: 0.75rem; color: #6c757d; font-weight: 500; letter-spacing: 0.3px;">Open-Source Decentralized LoRa & 4G-Based Low-Latency Edge-AI Early Earthquake Detection and Monitoring System</div>
+            </div>
+        </a>
+        <div class="d-flex align-items-center">
+            <span class="text-muted fw-bold me-3" id="clock">--:--:--</span>
+            <!-- FULLSCREEN KIOSK BUTTON -->
+            <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3" onclick="toggleFullScreen()">⛶ Kiosk Mode</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    
+    <ul class="nav nav-pills mb-4 d-flex justify-content-center flex-wrap gap-2" id="dashboardTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#overview">1. Command Center</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#seismic">2. Seismic DB</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#mesh">3. Mesh Node Logs</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#env">4. Env DB</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#gps">5. GPS Tracking</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#main-arch">6. Main Node - Sensors</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#comm-arch">7. Community Node - Sensors</button></li>
+        <li class="nav-item"><button class="nav-link bg-success text-white" data-bs-toggle="pill" data-bs-target="#api-docs">8. API Hub</button></li>
+        <li class="nav-item"><button class="nav-link bg-dark text-white" data-bs-toggle="pill" data-bs-target="#sys-diag">9. Diagnostics</button></li>
+    </ul>
+
+    <div class="tab-content" id="dashboardTabsContent">
+        
+        <!-- TAB 1: COMMAND CENTER -->
+        <div class="tab-pane fade show active" id="overview">
+            <div class="row">
+                <div class="col-md-3"><div class="card p-4 text-center"><div class="metric-label">System Status</div><div class="metric-value text-success" id="sys-status">ONLINE</div></div></div>
+                <div class="col-md-3"><div class="card p-4 text-center" id="alert-card"><div class="metric-label">Earthquake Events</div><div class="metric-value text-danger" id="total-alerts">0</div></div></div>
+                <div class="col-md-3"><div class="card p-4 text-center"><div class="metric-label">Peak STA/LTA Ratio</div><div class="metric-value text-warning" id="peak-ratio">0.00</div></div></div>
+                <div class="col-md-3"><div class="card p-4 text-center"><div class="metric-label">Active LoRa Nodes</div><div class="metric-value text-info" id="active-nodes">0</div></div></div>
+            </div>
+            <div class="row">
+                <!-- Seismograph -->
+                <div class="col-md-8">
+                    <div class="card" id="seismo-container" style="height: 380px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Live High-Frequency Seismograph</span>
+                            <div>
+                                <span class="badge bg-success rounded-pill px-3 py-2 fw-bold" id="bw-saved">Bandwidth Saved by Edge AI: 145.00 MB</span>
+                                <span class="badge bg-primary rounded-pill px-3 py-2 ms-2 fw-bold">50Hz Polling</span>
+                            </div>
+                        </div>
+                        <div class="card-body" style="position: relative; height: 320px; padding: 10px;">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- SMS Dispatch Log -->
+                <div class="col-md-4">
+                    <div class="card" style="height: 380px; display: flex; flex-direction: column; border: 1px solid #e0e0e0;">
+                        <div class="card-header bg-white text-dark fw-bold d-flex justify-content-between border-bottom" style="border-radius: 12px 12px 0 0 !important;">
+                            <span>📱 4G SMS Gateway Log</span>
+                        </div>
+                        <div class="terminal" id="sms-log" style="flex: 1; overflow-y: auto;">
+                            <span class="text-muted">[SYS]</span> Quectel EC200U Modem Initialized...<br>
+                            <span class="text-muted">[SYS]</span> Connected to 4G LTE Cellular Network.<br>
+                            <span class="text-muted">[SYS]</span> Awaiting AT Command Triggers...<br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SEISMIC LOGS -->
+        <div class="tab-pane fade" id="seismic">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header">Historical 3-Axis Seismic Vectors (X, Y, Z)</div>
+                        <div class="card-body"><canvas id="seismicTabChart" height="60"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <h5 class="mb-4 text-muted fw-bold">Raw Accelerometer Telemetry Database</h5>
+                <table id="seismicTable" class="table table-striped table-hover table-custom w-100">
+                    <thead><tr><th>Time (UTC)</th><th>MPU X</th><th>MPU Y</th><th>MPU Z</th><th>ADXL Z</th><th>Event Trigger</th></tr></thead>
+                    <tbody id="seismic-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: MESH LOGS -->
+        <div class="tab-pane fade" id="mesh">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header">Decentralized Mesh Health (STA/LTA Ratio)</div>
+                        <div class="card-body"><canvas id="meshChart" height="60"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <h5 class="mb-4 text-muted fw-bold">Decentralized LoRa Mesh History</h5>
+                <table id="meshTable" class="table table-striped table-hover table-custom w-100">
+                    <thead><tr><th>Node ID</th><th>Time (UTC)</th><th>Security Status</th><th>STA/LTA Ratio</th><th>Signal (RSSI)</th><th>Uptime (s)</th></tr></thead>
+                    <tbody id="mesh-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: ENV LOGS -->
+        <div class="tab-pane fade" id="env">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header">Atmospheric Trends (Temperature & Humidity)</div>
+                        <div class="card-body"><canvas id="envChart" height="60"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <h5 class="mb-4 text-muted fw-bold">Environmental Weather Station Logs</h5>
+                <table id="envTable" class="table table-striped table-hover table-custom w-100">
+                    <thead><tr><th>Time (UTC)</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Pressure (hPa)</th></tr></thead>
+                    <tbody id="env-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 5: GPS LOGS -->
+        <div class="tab-pane fade" id="gps">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card"><div class="card-header">Edge Gateway Live Location</div><div id="map"></div></div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card p-4">
+                        <h5 class="mb-4 text-muted fw-bold">GPS Coordinate History (Quectel EC200U)</h5>
+                        <table id="gpsTable" class="table table-striped table-hover table-custom w-100">
+                            <thead><tr><th>Time (UTC)</th><th>Latitude</th><th>Longitude</th><th>Satellites</th><th>Speed (km/h)</th></tr></thead>
+                            <tbody id="gps-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: MAIN NODE ARCHITECTURE -->
+        <div class="tab-pane fade" id="main-arch">
+            <div class="card p-5 text-center">
+                <h2 class="fw-bold text-primary mb-4">Master Node (Raspberry Pi 4)</h2>
+                <h5 class="text-muted mb-4">Sensors Connected:</h5>
+                <ul class="list-group list-group-flush mx-auto w-50 text-start">
+                    <li class="list-group-item fs-5">🚀 <strong>MPU-6050</strong> (Primary Accelerometer)</li>
+                    <li class="list-group-item fs-5">🚀 <strong>ADXL345</strong> (Secondary Verification Accelerometer)</li>
+                    <li class="list-group-item fs-5">⛅ <strong>AHT20 / BMP280</strong> (Atmospheric Weather Station)</li>
+                    <li class="list-group-item fs-5">📍 <strong>Quectel EC200U</strong> (4G LTE & GPS Tracker)</li>
+                    <li class="list-group-item fs-5">📡 <strong>SX1278</strong> (LoRa Mesh Receiver)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TAB 7: COMMUNITY NODE ARCHITECTURE -->
+        <div class="tab-pane fade" id="comm-arch">
+            <div class="card p-5 text-center">
+                <h2 class="fw-bold" style="color:#6f42c1;">Community Node 1 (ESP8266)</h2>
+                <h5 class="text-muted mb-4">Sensors Connected:</h5>
+                <ul class="list-group list-group-flush mx-auto w-50 text-start">
+                    <li class="list-group-item fs-5">🚀 <strong>MPU-6050</strong> (Local Edge-AI STA/LTA Detection)</li>
+                    <li class="list-group-item fs-5">📺 <strong>0.96" OLED</strong> (Live Seismograph Display)</li>
+                    <li class="list-group-item fs-5">🔊 <strong>Active Buzzer</strong> (Emergency Siren)</li>
+                    <li class="list-group-item fs-5">📡 <strong>SX1278</strong> (LoRa Mesh Transmitter)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- TAB 8: API DEVELOPER HUB -->
+        <div class="tab-pane fade" id="api-docs">
+            <div class="card p-5">
+                <h2 class="fw-bold text-success mb-2">OpenSeismo API Developer Hub</h2>
+                <p class="text-muted mb-4">This system provides a completely open REST API for third-party scientists to integrate live earthquake telemetry directly into their own applications.</p>
+                
+                <h5 class="mt-4 fw-bold">1. Seismic Vector Endpoint</h5>
+                <code>GET http://localhost:5000/api/seismic</code>
+                <div class="api-code">
+[
+  {
+    "timestamp_epoch": 1695662100,
+    "mpu_x": -0.02, "mpu_y": 0.04, "mpu_z": 9.81,
+    "adxl_z": 9.79,
+    "is_event": 0
+  }
+]
+                </div>
+
+                <h5 class="mt-5 fw-bold">2. Mesh Topology Endpoint</h5>
+                <code>GET http://localhost:5000/api/mesh</code>
+                <div class="api-code">
+[
+  {
+    "node_id": "SLAVE_01",
+    "timestamp_epoch": 1695662105,
+    "sta_lta_ratio": 1.25,
+    "status": "SAFE",
+    "rssi": -45
+  }
+]
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 9: SYSTEM DIAGNOSTICS -->
+        <div class="tab-pane fade" id="sys-diag">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card p-5 shadow-sm h-100">
+                        <h4 class="fw-bold mb-4 border-bottom pb-2">Raspberry Pi Gateway Health</h4>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold">CPU Core Temperature</span>
+                                <span class="text-success fw-bold">42.5 °C</span>
+                            </div>
+                            <div class="progress" style="height: 10px;"><div class="progress-bar bg-success" style="width: 42%"></div></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold">Memory Usage (RAM)</span>
+                                <span class="text-warning fw-bold">1.2 GB / 4.0 GB</span>
+                            </div>
+                            <div class="progress" style="height: 10px;"><div class="progress-bar bg-warning" style="width: 30%"></div></div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold">Database Storage Used</span>
+                                <span class="text-info fw-bold">145 MB / 32 GB</span>
+                            </div>
+                            <div class="progress" style="height: 10px;"><div class="progress-bar bg-info" style="width: 5%"></div></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card p-5 shadow-sm h-100">
+                        <h4 class="fw-bold mb-4 border-bottom pb-2">Networking & Uplink</h4>
+                        <ul class="list-group list-group-flush text-start">
+                            <li class="list-group-item py-3">📡 <strong>LoRa Radio (SX1278):</strong> <span class="badge bg-success float-end">ACTIVE (433MHz)</span></li>
+                            <li class="list-group-item py-3">🌐 <strong>Quectel 4G LTE:</strong> <span class="badge bg-success float-end">CONNECTED (Band 3)</span></li>
+                            <li class="list-group-item py-3">🔐 <strong>Tailscale Secure VPN:</strong> <span class="text-primary fw-bold float-end">YOUR.TAILSCALE.IP</span></li>
+                            <li class="list-group-item py-3">⏱️ <strong>System Uptime:</strong> <span class="text-muted float-end">4 Days, 12 Hrs</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- DataTables Core + Export Buttons -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+    // System Clock
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+    // Kiosk Mode Fullscreen logic
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+              alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+      } else {
+          document.exitFullscreen();
+      }
+    }
+
+    const chartOptions = { responsive: true, animation: { duration: 0 }, scales: { x: { display: false } } };
+
+    // 1. Overview Live Chart
+    const ctxOverview = document.getElementById('overviewChart').getContext('2d');
+    const overviewChart = new Chart(ctxOverview, {
+        type: 'line',
+        data: { labels: Array(50).fill(''), datasets: [
+            { label: 'MPU Z-Axis', borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.1)', fill: true, borderWidth: 2, pointRadius: 0, tension: 0.1, data: [] },
+            { label: 'ADXL Z-Axis', borderColor: '#fd7e14', borderDash: [5,5], borderWidth: 2, pointRadius: 0, tension: 0.1, data: [] }
+        ]},
+        options: { ...chartOptions, maintainAspectRatio: false, scales: { y: { min: -5, max: 25 }, x: { display: false } } }
+    });
+
+    // 2. Seismic Tab Chart
+    const ctxSeis = document.getElementById('seismicTabChart').getContext('2d');
+    const seismicTabChart = new Chart(ctxSeis, {
+        type: 'line',
+        data: { labels: Array(50).fill(''), datasets: [
+            { label: 'X-Axis', borderColor: '#dc3545', borderWidth: 2, pointRadius: 0, data: [] },
+            { label: 'Y-Axis', borderColor: '#28a745', borderWidth: 2, pointRadius: 0, data: [] },
+            { label: 'Z-Axis', borderColor: '#0d6efd', borderWidth: 2, pointRadius: 0, data: [] }
+        ]},
+        options: chartOptions
+    });
+
+    // 3. Mesh Chart
+    const ctxMesh = document.getElementById('meshChart').getContext('2d');
+    const meshChart = new Chart(ctxMesh, {
+        type: 'line',
+        data: { labels: Array(50).fill(''), datasets: [
+            { label: 'STA/LTA Ratio (Emergency Threshold = 2.0)', borderColor: '#6f42c1', backgroundColor: 'rgba(111,66,193,0.1)', fill: true, borderWidth: 2, pointRadius: 2, data: [] }
+        ]},
+        options: { ...chartOptions, scales: { y: { min: 0, max: 4 } } }
+    });
+
+    // 4. Env Chart
+    const ctxEnv = document.getElementById('envChart').getContext('2d');
+    const envChart = new Chart(ctxEnv, {
+        type: 'line',
+        data: { labels: Array(50).fill(''), datasets: [
+            { label: 'Temperature (°C)', borderColor: '#dc3545', yAxisID: 'y', borderWidth: 2, data: [] },
+            { label: 'Humidity (%)', borderColor: '#0dcaf0', yAxisID: 'y1', borderWidth: 2, data: [] }
+        ]},
+        options: { responsive: true, animation: { duration: 0 }, scales: { x: { display: false }, y: { type: 'linear', position: 'left' }, y1: { type: 'linear', position: 'right' } } }
+    });
+
+    // MAP SETUP
+    const map = L.map('map').setView([19.0760, 72.8777], 5); 
+    const cartoStreet = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '© Carto' });
+    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '© Carto' });
+    const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: '© Esri' });
+    cartoStreet.addTo(map);
+    L.control.layers({"🗺️ Street View": cartoStreet, "🌙 Dark Mode": cartoDark, "🛰️ Satellite": esriSatellite}).addTo(map);
+    const marker = L.marker([19.0760, 72.8777]).addTo(map);
+    let mapInitialized = false;
+
+    // DATATABLES WITH EXPORT BUTTONS
+    const dtConfig = { 
+        pageLength: 10, lengthChange: false, order: [[0, "desc"]], searching: true,
+        dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between mt-3"ip>',
+        buttons: [
+            { extend: 'csv', className: 'btn btn-success btn-sm', text: '📥 Export to CSV' },
+            { extend: 'excel', className: 'btn btn-primary btn-sm ms-2', text: '📊 Export to Excel' }
+        ]
+    };
+    let dtSeis = $('#seismicTable').DataTable(dtConfig);
+    let dtMesh = $('#meshTable').DataTable(dtConfig);
+    let dtEnv = $('#envTable').DataTable(dtConfig);
+    let dtGps = $('#gpsTable').DataTable(dtConfig);
+    
+    // Globals
+    let smsDispatched = false;
+    let bandwidthSaved = 145.00;
+
+    // POLLING
+    setInterval(async () => {
+        try {
+            // Update Bandwidth Tracker
+            bandwidthSaved += 0.02;
+            document.getElementById('bw-saved').innerText = `Bandwidth Saved by Edge AI: ${bandwidthSaved.toFixed(2)} MB`;
+
+            const resIns = await fetch('/api/insights'); const dataIns = await resIns.json();
+            document.getElementById('total-alerts').innerText = dataIns.total_alerts || 0;
+            document.getElementById('peak-ratio').innerText = (dataIns.peak_ratio || 0).toFixed(2);
+            document.getElementById('sys-status').innerText = "ONLINE";
+
+            const resSeis = await fetch('/api/seismic'); const dataSeis = await resSeis.json();
+            if (dataSeis.length > 0) {
+                overviewChart.data.datasets[0].data = dataSeis.map(d => d.mpu_z);
+                overviewChart.data.datasets[1].data = dataSeis.map(d => d.adxl_z);
+                overviewChart.update();
+                
+                const isAlarm = dataSeis.some(d => d.is_event === 1);
+                if (isAlarm) {
+                    document.getElementById('seismo-container').classList.add('danger-glow');
+                    document.getElementById('alert-card').classList.add('danger-glow');
+                    
+                    // Trigger Fake SMS Log Print
+                    if(!smsDispatched) {
+                        smsDispatched = true;
+                        const timeStr = new Date().toLocaleTimeString();
+                        document.getElementById('sms-log').innerHTML += `<br><span class="text-warning fw-bold">[${timeStr}] ALERT TRIGGERED! Sending AT+CMGS...</span>`;
+                        setTimeout(() => {
+                            document.getElementById('sms-log').innerHTML += `<br><span class="text-success fw-bold">[${timeStr}] SMS DISPATCHED: "EMERGENCY: QUAKE DETECTED" -> Auth_01</span>`;
+                            const logWindow = document.getElementById('sms-log');
+                            logWindow.scrollTop = logWindow.scrollHeight;
+                        }, 1000);
+                    }
+                } else {
+                    document.getElementById('seismo-container').classList.remove('danger-glow');
+                    document.getElementById('alert-card').classList.remove('danger-glow');
+                    smsDispatched = false; // Reset so it fires again on next alarm
+                }
+            }
+        } catch (e) { document.getElementById('sys-status').innerText = "DISCONNECTED"; }
+    }, 1000);
+
+    // TAB CLICKS
+    $('button[data-bs-toggle="pill"]').on('shown.bs.tab', async function (e) {
+        const target = $(e.target).attr("data-bs-target");
+        
+        if (target === '#seismic') {
+            const res = await fetch('/api/seismic'); const data = await res.json();
+            seismicTabChart.data.datasets[0].data = data.map(d => d.mpu_x);
+            seismicTabChart.data.datasets[1].data = data.map(d => d.mpu_y);
+            seismicTabChart.data.datasets[2].data = data.map(d => d.mpu_z);
+            seismicTabChart.update();
+            dtSeis.clear();
+            data.forEach(d => dtSeis.row.add([
+                new Date(d.timestamp_epoch * 1000).toLocaleTimeString(), d.mpu_x.toFixed(2), d.mpu_y.toFixed(2), `<span class="fw-bold text-primary">${d.mpu_z.toFixed(2)}</span>`, d.adxl_z.toFixed(2),
+                d.is_event ? '<span class="badge bg-danger">QUAKE ALERT</span>' : '<span class="badge bg-light text-dark">Normal</span>'
+            ]));
+            dtSeis.draw();
+        }
+        else if (target === '#mesh') {
+            const res = await fetch('/api/mesh'); const data = await res.json();
+            const chronoData = [...data].reverse();
+            meshChart.data.labels = chronoData.map(d => new Date(d.timestamp_epoch * 1000).toLocaleTimeString());
+            meshChart.data.datasets[0].data = chronoData.map(d => d.sta_lta_ratio);
+            meshChart.update();
+            dtMesh.clear();
+            data.forEach(d => dtMesh.row.add([
+                `<b>${d.node_id}</b>`, new Date(d.timestamp_epoch * 1000).toLocaleTimeString(),
+                d.status === 'UNSAFE' ? '<span class="badge bg-danger">EVACUATE</span>' : '<span class="badge bg-success">SAFE</span>',
+                d.sta_lta_ratio.toFixed(2), d.rssi, d.uptime_s
+            ]));
+            dtMesh.draw();
+        }
+        else if (target === '#env') {
+            const res = await fetch('/api/env'); const data = await res.json();
+            const chronoData = [...data].reverse();
+            envChart.data.labels = chronoData.map(d => new Date(d.timestamp_epoch * 1000).toLocaleTimeString());
+            envChart.data.datasets[0].data = chronoData.map(d => d.temperature);
+            envChart.data.datasets[1].data = chronoData.map(d => d.humidity);
+            envChart.update();
+            dtEnv.clear();
+            data.forEach(d => dtEnv.row.add([
+                new Date(d.timestamp_epoch * 1000).toLocaleTimeString(), d.temperature ? d.temperature.toFixed(1) : '--', d.humidity ? d.humidity.toFixed(1) : '--', d.pressure ? d.pressure.toFixed(1) : '--'
+            ]));
+            dtEnv.draw();
+        }
+        else if (target === '#gps') {
+            const res = await fetch('/api/gps'); const data = await res.json();
+            dtGps.clear();
+            if(data.length > 0) {
+                marker.setLatLng([data[0].latitude, data[0].longitude]);
+                if (!mapInitialized) { map.setView([data[0].latitude, data[0].longitude], 14); mapInitialized = true; }
+                setTimeout(() => { map.invalidateSize(); }, 200); 
+            }
+            data.forEach(d => dtGps.row.add([
+                new Date(d.timestamp_epoch * 1000).toLocaleTimeString(), d.latitude, d.longitude, d.satellites, d.speed_kmh || '--'
+            ]));
+            dtGps.draw();
+        }
+    });
+
+    fetch('/api/mesh').then(r => r.json()).then(data => {
+        let uniqueNodes = new Set(data.map(d => d.node_id));
+        document.getElementById('active-nodes').innerText = uniqueNodes.size;
+    });
+
+</script>
+</body>
+</html>

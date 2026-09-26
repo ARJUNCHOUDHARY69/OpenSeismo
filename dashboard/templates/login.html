@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenSeismo - Enterprise Login</title>
+    <!-- Bootstrap 5 Dark Theme -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            border-top: 4px solid #0d6efd;
+        }
+        .form-control {
+            background-color: #2b2b2b;
+            border: 1px solid #444;
+            color: white;
+        }
+        .form-control:focus {
+            background-color: #333;
+            color: white;
+            border-color: #0d6efd;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card text-center">
+    <h2 class="mb-4">🛡️ OpenSeismo</h2>
+    <p class="text-muted mb-4 fw-bold" style="font-size: 0.85rem;">Open-Source Decentralized LoRa & 4G-Based Low-Latency Edge-AI Early Earthquake Detection and Monitoring System</p>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="mb-3 text-start">
+            <label class="form-label">Admin Username</label>
+            <input type="text" name="username" class="form-control" required placeholder="Enter username">
+        </div>
+        <div class="mb-4 text-start">
+            <label class="form-label">Secure Password</label>
+            <input type="password" name="password" class="form-control" required placeholder="Enter password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2">Access Dashboard</button>
+    </form>
+    <div class="mt-4 text-muted small">
+        &copy; 2026 OpenSeismo Edge-AI Network<br>
+        FOSSEE Hackathon IIT Bombay
+    </div>
+</div>
+
+</body>
+</html>
