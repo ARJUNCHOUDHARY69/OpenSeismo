@@ -52,6 +52,9 @@ Instead of relying solely on local Wi-Fi, the system features **Hardware-Level 4
 
 Furthermore, all telemetry data is transmitted from the Pi to the Windows Database over a **Tailscale WireGuard VPN Tunnel**. This ensures zero-trust encryption, meaning the system can be deployed anywhere in the world without requiring dangerous port-forwards on local routers.
 
+<img width="807" height="1600" alt="WhatsApp Image 2026-09-26 at 10 17 56 AM" src="https://github.com/user-attachments/assets/5adee46e-8d6c-4a3f-ac6c-af9034f9d639" />
+
+
 ---
 
 ## ✅ Pros & Advantages
