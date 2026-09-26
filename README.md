@@ -19,15 +19,15 @@ To distinguish between an actual earthquake P-wave and ambient background noise 
 - **LTA (Long-Term Average):** Tracks the steady baseline background noise of the environment. (Window: 10.0 seconds)
 - **Trigger:** When the ratio of STA divided by LTA exceeds a critical threshold (≥ 2.0), an earthquake is officially declared.
 
-![STA/LTA Earthquake Trigger Graph](sta_lta_graph.png)
-*(Above: A generated plot illustrating how the STA/LTA algorithm filters background noise and cleanly triggers when an earthquake P-Wave arrives.)*
+
+<img width="3000" height="2400" alt="sta_lta_graph" src="https://github.com/user-attachments/assets/eaab1a2d-9705-4a8d-9e32-b2086379eeb1" />
 
 ---
 
 ## 📡 System Architecture & Communication Stack
 OpenSeismoPi is highly modular, featuring a master compute node and remote mesh nodes.
 
-![Communication Stack Architecture](communication_stack_diagram.jpg)
+<img width="1024" height="1024" alt="communication_stack_diagram" src="https://github.com/user-attachments/assets/d6511351-38a8-41b5-86ef-0b6e7b2b27ac" />
 
 ### Four Distinct Protocols:
 1. **I2C Bus (400kHz):** Connects the Raspberry Pi to high-precision sensors (MPU6050, BMP280, AHT20).
@@ -38,7 +38,7 @@ OpenSeismoPi is highly modular, featuring a master compute node and remote mesh 
 ---
 
 ## 🗺️ Network Topology & Zero-Trust Security
-![Network Topology](network_topology_diagram.jpg)
+<img width="1024" height="1024" alt="network_topology_diagram" src="https://github.com/user-attachments/assets/4fd0bf3b-d276-4fb1-bace-edea22591581" />
 
 Instead of relying solely on local Wi-Fi, the system features **Hardware-Level 4G Auto-Failover**. If an earthquake destroys local fiber-optic lines, the system seamlessly routes telemetry through the cellular modem. 
 
