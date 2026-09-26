@@ -1,8 +1,8 @@
-# OpenSeismoPi 🌍🚨
+# OpenSeismo 🌍🚨
 > **An Open-Source, Low-Cost Earthquake Early Warning & Detection IoT System**
 > Developed for the **FOSSEE Open Hardware Make-A-Thon 2026 (IIT Bombay)**
 
-**OpenSeismoPi** is an affordable, Raspberry Pi-based earthquake early warning system designed to detect tremors and alert communities before disaster strikes. By constantly monitoring sensitive motion and environmental sensors, it identifies the initial signs of an earthquake using a specialized mathematical algorithm. The moment a dangerous tremor is confirmed, the system immediately sounds a local alarm, dispatches emergency SMS text warnings over a 4G LTE cellular network, and seamlessly triggers remote community receiver nodes using long-range LoRa radio. Simultaneously, all live seismic data is securely transmitted to a central computer, where a real-time web dashboard displays the earthquake's waveforms and system status to keep everyone informed and safe.
+**OpenSeismo** is an affordable, Raspberry Pi-based earthquake early warning system designed to detect tremors and alert communities before disaster strikes. By constantly monitoring sensitive motion and environmental sensors, it identifies the initial signs of an earthquake using a specialized mathematical algorithm. The moment a dangerous tremor is confirmed, the system immediately sounds a local alarm, dispatches emergency SMS text warnings over a 4G LTE cellular network, and seamlessly triggers remote community receiver nodes using long-range LoRa radio. Simultaneously, all live seismic data is securely transmitted to a central computer, where a real-time web dashboard displays the earthquake's waveforms and system status to keep everyone informed and safe.
 
 ---
 
