@@ -13,6 +13,14 @@ Earthquakes emit multiple types of seismic waves. The two most important for ear
 
 **OpenSeismoPi** takes advantage of this speed difference. By detecting the harmless P-wave the moment it arrives, the system can issue an emergency alert, providing crucial seconds (or even minutes) of warning time before the destructive S-wave hits.
 
+
+<img width="2442" height="1545" alt="Untitled design" src="https://github.com/user-attachments/assets/aeb85081-f68b-48c7-aa07-39f03468c3e0" />
+
+<img width="1563" height="1320" alt="Untitled Sketch 2_bb" src="https://github.com/user-attachments/assets/b49e0372-a823-4dac-ad43-645cd28bc664" />
+
+
+
+
 ### The STA/LTA Algorithm
 To distinguish between an actual earthquake P-wave and ambient background noise (like a truck driving by or someone dropping a heavy box), the Raspberry Pi runs the **Short-Term Average over Long-Term Average (STA/LTA)** algorithm at a fast 50Hz loop rate. 
 - **STA (Short-Term Average):** Reacts instantly to sudden spikes in seismic energy. (Window: 0.5 seconds)
